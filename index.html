@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdvaTech Receipt Upload</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f5f5;
+    margin: 0;
+    padding: 16px;
+    color: #222;
+  }
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 480px;
+    margin: 0 auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  h1 {
+    font-size: 1.4rem;
+    margin: 0 0 4px 0;
+    text-align: center;
+  }
+  .sub {
+    text-align: center;
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+  label {
+    display: block;
+    font-weight: 600;
+    margin: 14px 0 6px 0;
+    font-size: 0.95rem;
+  }
+  input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    background: #fafafa;
+  }
+  textarea { min-height: 70px; resize: vertical; }
+  .file-area {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    background: #fafafa;
+    margin-bottom: 8px;
+  }
+  .file-area input { margin-top: 8px; }
+  button {
+    width: 100%;
+    background: #0070f3;
+    color: white;
+    border: none;
+    padding: 14px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    border-radius: 8px;
+    margin-top: 18px;
+    cursor: pointer;
+  }
+  button:active { background: #005bb5; }
+  .preview {
+    margin-top: 10px;
+    max-width: 100%;
+    border-radius: 8px;
+    display: none;
+  }
+  .note {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 12px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Scan Receipt</h1>
+  <p class="sub">AdvaTech Systems – QuickBooks Upload</p>
+
+  <form id="receiptForm">
+    <label>Receipt Photo *</label>
+    <div class="file-area">
+      <div>Tap to take photo or choose file</div>
+      <input type="file" id="photo" accept="image/*" capture="environment" required>
+      <img id="preview" class="preview" alt="Preview">
+    </div>
+
+    <label>Category *</label>
+    <select id="category" required>
+      <option value="">Select category...</option>
+      <option>Fuel / Gas</option>
+      <option>Tools & Equipment</option>
+      <option>Materials / Parts</option>
+      <option>Meals / Travel</option>
+      <option>Office / Supplies</option>
+      <option>Vehicle Maintenance</option>
+      <option>Other</option>
+    </select>
+
+    <label>What was purchased? *</label>
+    <input type="text" id="description" placeholder="e.g. 2x 1/2" EMT fittings, diesel fuel, etc." required>
+
+    <label>Job / Customer / PO (optional)</label>
+    <input type="text" id="job" placeholder="Job name, customer, or PO number">
+
+    <label>Amount (optional)</label>
+    <input type="number" id="amount" step="0.01" placeholder="0.00">
+
+    <label>Notes (optional)</label>
+    <textarea id="notes" placeholder="Any extra details..."></textarea>
+
+    <button type="submit">Prepare Email to QuickBooks</button>
+  </form>
+
+  <p class="note">This will open your email app with the details filled in.<br>Attach the receipt photo and send.</p>
+</div>
+
+<script>
+const form = document.getElementById('receiptForm');
+const photoInput = document.getElementById('photo');
+const preview = document.getElementById('preview');
+
+photoInput.addEventListener('change', function() {
+  const file = this.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  const category = document.getElementById('category').value;
+  const description = document.getElementById('description').value.trim();
+  const job = document.getElementById('job').value.trim();
+  const amount = document.getElementById('amount').value;
+  const notes = document.getElementById('notes').value.trim();
+
+  if (!category || !description) {
+    alert('Please fill in Category and Description.');
+    return;
+  }
+
+  let body = `Category: ${category}\n`;
+  body += `Description: ${description}\n`;
+  if (job) body += `Job/Customer/PO: ${job}\n`;
+  if (amount) body += `Amount: $${parseFloat(amount).toFixed(2)}\n`;
+  if (notes) body += `Notes: ${notes}\n`;
+  body += `\n(Please attach the receipt photo before sending)`;
+
+  const subject = encodeURIComponent(`Receipt - ${category} - ${description.substring(0, 40)}`);
+  const bodyEnc = encodeURIComponent(body);
+  const mailto = `mailto:advatech_systems+expenses@assist.intuit.com?subject=${subject}&body=${bodyEnc}`;
+
+  window.location.href = mailto;
+});
+</script>
+</body>
+</html>
