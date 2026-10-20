@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AdvaTech Expenses</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --card: #ffffff;
+    --text: #1a1d23;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --accent: #111827;
+    --accent-hover: #000;
+    --green: #059669;
+    --red: #dc2626;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.4;
+  }
+  .header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo {
+    height: 28px;
+  }
+  .header h1 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 0 0 12px 0;
+  }
+  label {
+    display: block;
+    font-weight: 500;
+    font-size: 0.95rem;
+    margin: 14px 0 6px 0;
+  }
+  input, select, textarea {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 16px;
+    background: #fff;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+  textarea { min-height: 70px; resize: vertical; }
+  .photo-box {
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 28px 16px;
+    text-align: center;
+    background: #fafafa;
+    cursor: pointer;
+  }
+  .photo-box strong { display: block; margin-bottom: 4px; }
+  .photo-box span { color: var(--muted); font-size: 0.9rem; }
+  .photo-box input { display: none; }
+  .preview {
+    margin-top: 12px;
+    max-width: 100%;
+    border-radius: 10px;
+    display: none;
+  }
+  .row {
+    display: flex;
+    gap: 12px;
+  }
+  .row > div { flex: 1; }
+  button.primary {
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    margin-top: 8px;
+    cursor: pointer;
+  }
+  button.primary:active { background: var(--accent-hover); }
+  .note {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 14px;
+    line-height: 1.4;
+  }
+  .success {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .ocr-status {
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 8px;
+    min-height: 20px;
+  }
+</style>
+</head>
+<body>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<div class="header">
+  <img class="logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAABkCAYAAAA8AQ3AAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH6AkLEz0nB8qKAAAAD3RFWHRBdXRob3IAbWFnaWNranVtcGVyAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH6AkLEz0nB8qKAAAAD3RFWHRBdXRob3IAbWFnaWNranVtcGVy" alt="AdvaTech" style="display:none">
+  <div>
+    <h1>AdvaTech Expenses</h1>
+  </div>
+</div>
+
+<div class="container">
+  <form id="expenseForm">
+    <div class="card">
+      <div class="section-title">Receipt</div>
+      <div class="photo-box" onclick="document.getElementById('photo').click()">
+        <strong>Take or upload receipt</strong>
+        <span>Clear photo of the full receipt</span>
+        <input type="file" id="photo" accept="image/*" capture="environment" required>
+        <img id="preview" class="preview" alt="Receipt preview">
+        <div id="ocrStatus" class="ocr-status"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Details</div>
+
+      <label>Amount *</label>
+      <input type="number" id="amount" step="0.01" min="0" placeholder="0.00" required>
+
+      <div class="row">
+        <div>
+          <label>Date *</label>
+          <input type="date" id="date" required>
+        </div>
+        <div>
+          <label>Vendor *</label>
+          <input type="text" id="vendor" list="vendorList" placeholder="Search vendor..." required autocomplete="off">
+          <datalist id="vendorList"></datalist>
+        </div>
+      </div>
+
+      <label>Category *</label>
+      <input type="text" id="category" list="categoryList" placeholder="Search category..." required autocomplete="off">
+      <datalist id="categoryList"></datalist>
+
+      <label>Description *</label>
+      <input type="text" id="description" placeholder="What was purchased?" required>
+
+      <label>Job / Customer (optional)</label>
+      <input type="text" id="job" placeholder="Job name, customer, or PO">
+
+      <label>Payment Account</label>
+      <select id="payment">
+        <option value="Chase INK Visa Credit Card" selected>Chase INK Visa Credit Card</option>
+      </select>
+    </div>
+
+    <button type="submit" class="primary">Submit Expense</button>
+    <p class="note">This prepares the receipt with all fields filled for review and posting in QuickBooks.</p>
+  </form>
+
+  <div class="success" id="success">
+    <h2>Submitted</h2>
+    <p>Your expense is ready for review.<br>Attach the photo if prompted and send.</p>
+    <button class="primary" style="margin-top:20px" onclick="location.reload()">Submit Another</button>
+  </div>
+</div>
+
+<script>
+const VENDORS = ["(WDFI) Wisconsin Dept of Financial Institutions", "1848 Coffee", "1stSales", "2checkout Absolute Home & Office", "5.11, Inc. (Tactical-Gurnee)", "50th valley", "7 Brew Coffee", "7-Eleven", "76 Gas Stations", "84 Lumber", "A & A TIRES", "A&A Tires", "A&B Security Group Inc.", "A&J Electrical Contractors LLC", "A&W Restaurant", "ABC Supply Co. Inc.", "ACME Tools", "ADI", "AFC Houston", "AJ Bombers", "AJ's Carwash (vendor)", "APlus", "AT&T", "AT&T Retail Store", "AVA Security, Inc.", "Aaron Lee", "Abeka", "AccessNsite", "Accurate Transmission Specialists", "Ace Hardware", "Ace Hardware - Jeffers", "Action Rental", "Acuity Insurance", "Adco Marketing", "Adobe", "Adobe Systems", "AdoptTogether", "Adorama", "Advance Auto Parts", "Aerial Work Platforms", "Airbnb Payments, Inc.", "Airgas USA, LLC", "Aladdin Catering Services (WCTC)", "Alamo", "Alarm Products Distributors", "Alarm.Com", "Aldi", "Alex's Locksmith & Security", "Alignable.com", "All County Electric Supply", "All For Christ International", "Allday Pizza", "Allianz Insurance", "Allied Universal Security Services", "Allyn International", "Alpine Lanes / Avalanche Grill", "Altelix", "Amazon", "Amazon.com", "AmericInn Iron Mountain", "American Airlines", "American Automobile Association (AAA)", "American Eagle", "American Family Insurance", "American Fence Company", "American Legion", "American Legion-Greendale Post", "American Science & Surplus", "Amsoil", "Amstar", "Amsterdam Printing", "Anixter International", "Ann & Chris Phillips", "Anthony's Pizza", "Anthonys CFP Miami Lakes", "Anytime Locksmith", "Apple Mart", "Arby's", "Area Rental & Sales Co, LLC", "Aro Lock & Door", "Ascension (Wheaton Franciscan Healthcare)", "Ascensus, LLC (IRA)", "AtM Withdrawal", "Atlanta International Airport", "Atlas Chiropractic Office", "Atlassian", "Audio America", "Auntie Anne's", "Aurora Health Care", "Austin Chronicle (Austin Airport)", "AutoZone", "Avetta", "Avigilon USA Corporation", "Avis", "Award Audio Video", "Axis Communications, Inc.", "B&H Photo & Video", "B-Lux", "BATTERYINT", "BLT Discount Low Voltage", "BP", "BP Amoco", "BRUEGGER'S", "BSN Sports-My Team Shop", "BWW Buffalo Wild Wings", "Babe's Grill House", "Badge Brew Coffee Roasters", "Badger Plasma", "BadgerCare Plus Program", "Baltic Networks", "Bandana's BBQ", "Bank of America", "Bankspower.com", "Bartolottas", "Batteries Plus", "Bed Bath & Beyond", "Belair Cantina", "Bella Goose Coffee", "Benjamin Fleig LLC", "Berkey Water Filter", "Best Buy", "Best Buy - Kansas City MO", "Best Buy-Baton Rouge", "Best Western", "BidClerk", "Big Boy", "Birnamwood VP", "Black Pig Sheboygan", "Blains Farm & Fleet", "Bliffert Lumber & Hardware", "Blue Book Building", "Bluemel's", "Blytheville Travel Center", "Bogart's Smokehouse", "Bojangles", "Bonsai Sushi", "Booking.com", "Boston Store", "Boucher Buick GMC of Waukesha", "Boyland Auto BGMC LLC", "Braeger Chevrolet, Inc.", "Brainstorm WI Dells", "Brake Time (STL)", "Braun Thyssenkrupp Elevator LLC", "Break Time", "Brick Pizzaria", "Broken Tree Pizza & Cherry On Top", "Brookfield Christian School", "Brothers BBQ", "Broward County Parks", "Brunch & Berry", "Bubba's Frozen Custard", "Buc-ee's", "Buckle", "Buddy's BBQ", "Burger IM", "Burger King", "Burleigh Hometown", "Bussin Buns", "Buzz Catz", "C R Hardware", "C-viche", "C.K. ELECTRIC, LLC.", "CAFE MOCHI", "CANVA", "CARLOS VALLESTEROS", "CDW", "CED", "CED/Lapin Electric", "CK Electric", "CLOUDFLARE", "CPO Commerce, LLC", "CVS Pharmacy", "CViche Restaurant", "Cabela's", "Cable & Wireless Technologies", "Cable Ties and More", "Caesars Palace", "Cafe Corazon", "Cafe Dujour", "Cafe Hollander", "Cafe Lu Lu", "Cafe Zupas", "Cajun Boil Hollywood", "Caleb Bessa", "Calvin Klein", "Candlewood Suites", "Cap Connection LLC", "CapCut", "Capital Lock, Inc", "Capital One", "Carlos Cantina", "Carraba's Italian Grill", "Casa Maria Mexican", "Casavana Cuban Cuisine", "Casey's General Store", "Cassidy Technologies", "Cellular Sales of Wisconsin LLC", "Cenex", "Central Private Police, LLC", "Century Fence Company", "Chase Bank", "ChatGPT", "Checkers", "Cheesecake Factory", "Chevrolet", "Chevron", "Chick-In-Waffle (KC)", "Chick-fil-A", "China Bear", "China Buffet", "China Hut", "Chipotle", "ChiroHealthUSA", "Chorus Community Health Plans CCHP", "Chrysler Capital", "Circle K", "Citgo", "Citi AAdvantage Cards", "City CDJRF of Brookfield Dealership", "City Screen Print and Embroidery", "City of Baton Rouge", "City of Hollywood", "City of Madison Parking", "City of Milwaukee Parking", "City of Muskego >", "City of New Berlin", "City of Waukesha Chamber of Commerce", "Clark (Gasolene)", "Climb Channel Solutions", "Cobalt Restaurant", "Coffee Bean & Tea Leaf", "Cold Stone Creamery", "Colectivo", "Colusa Rent A Car", "Commercial JA Duran", "Common Ground Healthcare Cooperative", "Communications, Inc.", "CompSource", "Concrete Fastening", "Connell Orthodontics", "Connexa", "Contractors Register Inc", "Convergent Healthcare Recoveries", "Cook Out Morrow", "Corner Bakery", "Costco", "Country Inn & Suites", "Courtyard by Marriott", "Cousins subs", "Covenant Tuition Assistance Services", "Crack Shack", "Cranky Al's", "CrawDaddy's", "Creative Mar", "Crescent Electric", "Cronofy Trello Connector", "Crossroads Pizza", "Crucial by Micron", "Culver's", "Currie Park Auto", "Cursor.com", "Custom Wheel Outlet, Inc", "D-Tools (System Integration Software)", "D.C. Motors Plus, Inc.", "DFW Airport", "DH Pace Company Inc", "DJ's Transmission", "DJO Global, LLC", "DK Systems, LLC", "DKC Digi Key Corp", "Dang Soft Serve", "Darren Fisher Consulting", "Dave's Hot Chicken", "Deep End Subs", "Deister Electronics, USA Inc.", "Dell Technologies", "Delta Airlines", "Devon Phillips - vendor", "Dick's Sporting Goods", "Diester Electronic", "Digitalocean.com", "Dina Mias of Florence WI", "Dino Mart", "Divino Gelato Cafe", "Do It Center", "Dollar Tree Stores, Inc", "DoorDash", "Dotcards.net", "Double Quick", "DoubleTree by Hilton", "Doubleradius Inc", "Doug Muszynski", "Douglas Hardware", "Dr. Jon Sisulak Orthodontist", "Draw", "Drilling's Panther Pub", "Drs. Connor,Wolf,Tikalsky", "Duet, Inc.", "Dun & Bradstreet", "Dunham's Sports", "Dunkin Donuts", "Dutch Bros. Coffee", "Dynamic Network Services", "E Access Control", "E and S Sweets", "EB (eventbrite) Corporate Training", "EWH", "EWH Accounting", "Eagle River Baking Company", "East Side Mart", "Easy Canvas Prints", "Easy Peasy All-In-One Homeschool", "Eat Rice", "Ebay", "Educators Credit Union", "Einstein Bros Bagels", "El Dorado", "El Paso Mexican Grill", "El Rey Family Market", "ElecDirect.com", "Electronic Security Association (ESA)", "ElevenLabs", "Elmbrook Oral and Maxillofacial Surgery Assc., S.C.", "EnGenius Store", "Encore", "Energy Re-Connect ltd", "Engler Electric", "Enterprise Rent-a-Car", "Esters", "Evan Skirrow", "ExacqVision Technical Reseller Training", "Expedia.com", "Exxon", "Exxon Mobil", "F&C Contractors, LLC", "Fabio's Italian Restaurant", "Facebook", "Fairfield Inn & Suites", "Falcon Technologies Inc. (FTI)", "Farkas Electric Inc.", "Fastenal", "Fastsigns Greenfield", "FedEx", "Fenix", "Ferguson Ent", "Fieldpulse software", "Find Hotel.com", "Fire Detection Group", "Firestone Complete Auto Care", "First Insurance Funding", "First Watch", "Fisco Auto Body Inc.", "Five Guys", "FiveStar", "Fleet Farm", "Fletcher Arms", "Flippy's Fast Food", "Flores Automation - Rent", "Flowroute Inc.", "For2Fi, Inc.", "Forefront Dermatology", "Forest Tire Center Inc", "Forever Young Wisconsin", "Fowler Electrical Services LLC", "Fox & the Hounds", "Fox Rent A Car", "Fox River Brewing", "Frank's Restaurant", "Franklin Equipment Rental and Sales", "Free Shipping Web", "Friendly Market", "Froedtert", "Frogs Gas Station", "Frontier Airlines", "Fry's Electronics", "Full Compass System", "Fusion A Certus Solution", "Fyxer", "GAMA Electronics, Inc", "GO-Magnets LLC", "GP 2 Petroleum", "GTs On The Bay", "Gander Mountain", "Garvin Industries", "Gas N Wash (IL)", "Gateway Mobile", "Gear Wash", "Geary Dentistry LLC", "Genetec, Inc.", "George's O'Neal", "Gi Associates, LLC", "Gingerbread House", "Girards Automotive", "Glendale ARC", "Glendale-North Shore Chamber of Commerce", "GoDaddy", "Good2Go", "Goodwill", "Google", "Google Inc.", "Goose Island", "Gordo's BBQ & Grill", "Gordon Electric Supply", "Gordon's #1 Service", "Grainger", "Graybar Electric Company", "Green Bay Top Golf", "Greendale Chamber of Commerce", "Greendale Park & Rec Dept", "Griffins Hub Chrysler Dodge", "Grok AI", "Grounded", "Guetzke & Associates Inc", "Guetzke and Associates Inc.", "Guitar Center", "H H Gregg", "H-D Museum", "HANNA TRAILER RV SUPPLY", "HG Ugas", "Hales Corners Municipal Court", "Ham Radio Outlet", "Hampton Inn by Hilton", "Harbor Freight Tools", "Hardee's", "Harland Clarke Checks", "Harley-Davidson Museum", "Hartlaub Plumbing", "Harvest Cafe", "Hein Electric Supply", "Helium", "Henry's Steakhouse", "Herc Rentals", "Hertz", "Higbee & Associates", "High Land Mercantile", "Highland Hardware", "Highway 61 Roadhouse", "Hiller Ford", "Hilton Hotels", "Hippenmeyer, Reilly, Blum, Schmitzer & Fabian, S.C.", "Hobby Lobby", "Hokkaido", "Holiday Inn", "Holiday Inn Express", "Holidays Pub & Grill", "Hom Grill Restaurant", "Home Depot", "Home Security & Management Co.", "Home2Suites", "Hometown", "Honeyberry Restaurant", "Honeywell", "Hooke Road", "Hopson Oil", "Hot Cow Mke", "Hotels", "Hucks Store", "Hugg&Hall Equipment Co.", "Hungry Bears Sub", "Hyatt", "ID Enhancements", "IPVM Internet Protocol Video Market", "IRS Department of the Treasury", "ISE.Media", "Imperial Lithographing Corp. (Rent)", "Imperial Lithographing Corporation", "In-N-Out", "Incredi-Roll Skate", "Indeed.com Online Job Ads", "Integral Truck", "Interstate Music", "Intrado Comm Holdings", "Intuit QBO", "IronYun, Inc. USA", "Ivees at Main", "Izakaya Ren Sushi and Sake Bar", "J. F. Ahern Co.", "J. Krug & Associates, Inc.", "J.H Medinger Co. Inc.", "JBM Security", "JCPenney", "JJ's Wings & Grill", "JM Brennan, Inc.", "JPM Americas Billboards", "Jack Flash Farmersville", "Jackie Welch", "Jackson's Hardware", "Jays Petro Mart", "Jeff Lee", "Jefferson Travel Center", "Jersey Mike's", "Jetz Convenience Center", "Jewel Instruments, LLC", "Jilly's Carwash", "Jimmy Johns", "Joe Heinz", "Joel Dhein", "Joey Emanuele", "Joey Gerads", "Johnny's Pizza House", "Jon Phillips", "Jonco Industries", "Jose's Blue Sombrero", "Joseph Winn Studio", "Jr's Fabrication & Welding", "Juban Chev", "Justin Staples", "KSF CPA LLC", "Kabod Coffee", "Kahlahari Resort & Convention Center", "Kalahari Resort Brew Pub", "Kalahari Resorts & Conventions", "Kalahari Wisconsin Brew Pub", "Karl's Country Mart", "Kasa Arlington TX Apartments", "Kathleen Laviolette", "Kathy Phillips", "Keeper Security Inc.", "Keith's Lock and Door Service LLC", "KellTech Systems", "Ken Weber Truck Service", "Kettle Moraine Hardwoods", "Kindle", "Klements Sausage CO", "Kohl's Dept Store", "Kohls Credit Card", "Konkel Accounting and Assoc., Inc.", "Krispy Kreme", "Krist Food Mart", "Kum & Go", "Kunes Buick GMC", "Kwik Trip", "Kwik Wiring & Systems, Inc.", "KwikPantry", "KwikStar", "KwikStop", "Kyoko Coffee", "LAFORCE", "LC'S BBQ (KC)", "LCS Lincoln Contractors Supply, Inc.", "LS Membership", "LTS", "LaQuinta", "LabCorp", "Lake Auto Glass, Inc", "Lake Effect Designs", "Landmark Credit Union", "Landry's", "Lanshack.com", "Larry Hren", "LastPass", "Laundry", "Laus Tire & Auto", "Lee Mechanical", "Lee's Asian Fusion", "LegalShield", "Legends Texaco", "Lemberg Electric Company, Inc.", "Liberty Express Mart", "Liberty Mutual", "Lids", "Lighthouse Safety LLC", "LinkPower", "LinkedIn", "Lisbon Creek Systems, LLC", "Lisbon Screen & Door", "Local Collective", "LogMeIn", "Logans 499", "Longhorn Steakhouse", "Loomis Gas", "Loopy", "Los Reyes Mexican Restaurant", "Lou Malnatis", "Louisiana Dept. of Revenue", "Lousiana Association", "Love's Gas Stations", "Loven Ovens", "Lowe's", "Lowell Manufacturing C", "Luka Coffee & Restaurant", "Lumber Liquidators", "Lumitak", "Luna's", "Lypc Tech LLC", "MH Imaging", "MKE Airport shops", "MOD Pizza", "Mach 1 Stores", "Mad Chicken", "Mad Max", "Mad Rooster", "Madison Medical", "Magdaddy, LLC", "Maggiano's", "Magnolia Plaza", "Magpul Industries Corp.", "Majestic Locksmith Corp.", "Malwarebytes", "Mama Bev's Bakery", "Mandel Company", "Marathon Petro", "Marcus Theatres", "Marie McGeorge", "Marmax Distribution", "Marshalls", "Marvin's Building Materials", "Mary Ronzio", "MaskExemption.Cards", "Master Books", "Matt Ryan", "Matthew 25 International", "Matthew Madden", "Matty's Bar & Grille", "Mattysbar", "Maurices", "Maverik", "Maxie's", "Mayor\u2019s Cafe", "McCray Accounting Services", "McDonalds", "McMiller Sports Center", "Meals", "Medical Diagnostic Labs", "Meijer", "Melissa Krotts", "Menards", "Mequon ARC", "Mercedes-Benz of Elmbrook", "Merit Asphalt", "Metro Market", "Miami Islander Bar & Grill", "Michaels", "Mickeys Family Grill", "Microcom Technologies", "Microsoft", "Midland Plastics Inc", "Midwest Fuel Inc", "Midwest Millwork Inc", "Mike Krause Electrician", "Mike Rebich", "Milk Can Diner", "Mill Supply, Inc.", "Miller Electrical Enterprises, Inc.", "Milwaukee Anesthesia Consultants", "Milwaukee Area Technical College", "Milwaukee Electric Tool Corp", "Milwaukee Municipal Court", "Milwaukee PC", "Milwaukee Radiologists, LTD SC", "Minuteman Press", "Miss Beverley's Deli", "Mitchell Airport Market", "Mitchell's Fish Market", "Mobile Repair Guys", "Moe's Southwest Grill", "Molina Healthcare of Wisconsin Marketplace", "Monk's Bar & Grill", "Montalbanos Seafood-Catering", "Mooses", "Motor Bar & Grill", "Motorola Solutions", "Mouser Electronics", "Movin & Lubin", "Multi Service Contracting", "Murphy Express", "Muse For You", "Muskego Chamber of Commerce", "Muskego Mobil", "N1 Critical Technologies, Inc", "NES Rentals", "NRA", "NRA Business Alliance", "Napa Auto", "Napco Security Technologies", "Nassco", "Nate Phillips", "Nation Safe Drivers", "National Ace Hardware", "National Bakery & Deli", "National Baking Company", "National Basketball", "National Pen", "National Pen Co. LLC", "Nations Auto Glass", "Naty\u2019s Pizza", "NavePoint", "Nelson-Wichgers Chiropractic Office", "Network After Work", "Network Health", "New Berlin Ale House", "New Berlin Car Care", "New Berlin Chamber of Commerce", "New Berlin Police Department", "New Image", "New Leaf Publishing Group", "Newegg Commerce, Inc.", "Newport Network Solutions Inc", "Next Level Distribution", "Nicholas Lucht", "Nip's Auto Service", "Noodles & Company", "Nord VPN", "Nori Tori Japanese Buffet", "Northern Tool & Equipment", "Northwestern Mutual", "NotoCD Industries Electrical Supplies", "O'Reilly's", "OEVEO.com", "OSHA Education Center", "Oak Market", "Oak Point Fresh Market", "Oakland Gyros", "Oakley", "Occly LLC", "Occupational Safety", "Ocean Drive/Prive Store", "Octopus Coffee", "Office Depot", "Office Max", "Old Navy", "Old World Wisconsin", "Olive Garden", "Omni Technologies, LLC", "On The Run", "OnLogic", "Online Labels", "Open AI", "Open Pantry", "Orca Scan Cambridge", "Original Pancake House", "Origins Hotel", "Oscars Frozen Custard", "Outback Steakhouse", "Outdoor Speaker Depot", "Ozzies", "P & C Sales Inc", "PC Connection Sales Corporation", "PDQ", "PJ'S Coffee and Wow Winger", "PS Gifts & More", "PTI Security Systems", "PaPa Ron's", "Pagoni's Pizza", "Pak-Rite, Ltd. / The Pelican Store", "Panda Express", "Panera Bread", "Panther Pub", "Pantry 41", "Pappadeaux Seafood", "Paradies Lagardere", "Paradise Lagardere Travel", "Paradise in Hollywood", "ParkMobile", "Parker John's BBQ & Pizza", "Parking Meter", "Parkside Hardware", "Parts Express", "Party City", "Pasty Oven", "Pay Range", "Payroll", "Pedestal Pro, LLC.", "Peerless Industries, Inc.", "Peking Chinese", "Pepitolandia", "Personnel Concepts", "Petro", "Phillips 66", "Physicians of Obstetrics", "Pick N Save", "Piggly Wiggly", "Pikey Coffee Co.", "Pilot Flying J", "Pine Mountain Resort", "Pinecrest Bakery, LLC", "Pinky Electric Inc", "Pizza Man", "Pizza de Miami", "Placker BV Driebergen EURO", "Planeview", "Plant and Fac Maint Assoc", "PlateSmart", "Play It Again Sports", "Pockethernet", "Point Burger Bar", "Poket Hardware GmbH", "Polymita Latin Food", "Pop's Market Place", "Porky's Bayside", "Portal Subscription", "Post Holes Unlimited", "Potbelly", "Premio, Inc.", "Pressworks", "Priceline.com", "Prime Printing", "ProHealth Care", "ProTec Controls", "Provantage", "Pulse Communications", "Puma", "Pump & Pantry", "Purath Headache and Neurology", "Q39 - Midtown (KC)", "Qdoba Mexican Grill", "Quad Lock", "Quick Stop", "QuickBooks Payments", "QuickTrip", "Quickbooks Time (TSheets)", "QuikTrip", "Quotientapp.com", "RAM Systems, LLC", "RICHLONNS TIRE & SERVICE", "RM Service Inc", "RUSHORDERTEES.COM", "RaceTrac", "Rackmount Solutions", "Radio Systems, Inc.", "Radioshack", "Radke Chiropractic Office", "Raising Cane's Chicken Fingers", "Range Technology / AFM Solutions", "Range USA", "Ray's Towing, Inc.", "Real Chili", "Real World Technologies", "Rebel", "Red Robin", "Refuel", "Refuel Commercial", "Reggio's HK", "Reliable Services of WI, LLC", "Remy Battery Co. Inc.", "Renewed Vision", "Residence Inn", "Restaurante Casa Noble", "Restaurants Miscellaneous", "Revive Our Hearts", "Ricardos Pizza", "Rich Renovations", "Richlonn's Tire & Service Center", "Ridge Cinemas", "Rinderle Door Company", "Ritter Technology", "River of Life International", "Riverfront Pizzeria Bar", "Road Ranger", "Rocket Money (was Truebill)", "Rodeo", "Roma Italian Bistro", "Rugged Laptops", "Rush Order Tees", "Rust Lock Inc", "SAL Casino Night", "SCMS, INC.", "SP Mart", "SUPERBRIGHTLEDS", "Safe Haven Defense", "SafeLite Auto Glass", "Sam's Club", "Sammy's Pizza & Italian Restaurant", "San Laurio Coffeehouse", "Sarita\"s Grill & Cantina", "ScanSource", "Schlitz & Giggles", "Scrub-A-Dub", "Seagate Technology LLC", "Sears Roebuck", "Security 101 Holdings, LLC", "Security Data Supply", "Security Equipment Supply (SES)", "Security Fobs Direct (SFD)", "Security Star Solutions LLC", "Seminole Travel Cnter", "Sendik's", "SensoScientific", "Sensor Scientific", "Seton", "Sfera Sicilian", "Shake Shack", "Shan Chinese Buffet", "Sheetz", "Shein.com", "Shell", "Sherwin Williams", "Shield Republic", "Shield of Hope Ministries", "Shois Restaurant Chinese", "Shooter Detection Systems", "Show Me Cables", "Sierra", "Signarama", "Signs.com", "Sir Waxer", "Sixt", "Skirrow Design Build LLC", "SkyMarket", "Skyline", "Skywalker AV Supply", "Slick Locks LLC", "Sling TV", "Sluggo's Sports Pub", "Smashburger", "Smoke Shack", "Smokin Aces", "Snack Time 3", "Snap Raise!", "Sobelman's", "Soerens Ford", "Sol De Mexico", "South Shore Chamber of Co", "Southwest Airlines", "Spectrum", "Spectrum Business", "Speedway", "Speedy Metals", "Spirit Airlines", "Sportland 2", "Sports Authority", "Spotify", "SpringHill Suites", "Square", "SquareTrade Warranties", "Squarespace Inc", "St. Louis Parking Company", "St. Vincent de Paul", "Starbucks", "Staybridge Suites", "Steakwave", "Steelsmyth, Inc", "Stern Electric LLC", "Stickermule", "Stickylife", "Stiles Switch BBQ", "Stockxx PA", "Stone Creek Coffee", "Stone Harbor Pub", "Stop N Go", "Store Director (KC)", "Streakwave", "Streakwave Wireless", "Stubs Gas & Oil", "Subway", "Sugar & Flour Bakery", "Sunbelt Rentals, Inc.", "Sunoco Gas Station", "Super Bright LEDS", "Sushi Lover", "Swagat India", "Sweetwater", "T&H Linden", "TCIW", "TEXAS ROADHOUSE", "TJMaxx", "TJX Rewards", "Taco Bell", "Takesh Grill", "Talkin Taco", "Talkin Tacos", "Taoglas", "Taqueria Mexico", "Target", "Team Viewer GmbH", "Team Wireless", "TeamSnap", "Tekton Remodeling LLC", "Telular Cellular", "Tess Corners Automotive", "The Badger Burger", "The Dentists On Bluemound", "The Doctor's Office", "The Fire Place LTD.", "The Francis Southern Table & Bar", "The Gingerbread House", "The Gulf", "The Hanover Insurance Group", "The IHN Company Inc.", "The Jambalaya Shoppe", "The Starr Group", "Thomas Press, Inc", "Thornton Chip Tuning", "Thumbtack", "Thurow Primary Preventative Healthcare", "Tiger Mart LLC", "Titletown Concession", "Tobin", "Tolls (Illinois Ipass, Indiana tolls, Ohio turnpike)", "Tomchek Ace Hardware", "Tony", "Tool Time Rent All", "Towne Place Suites", "Tractor Supply Co.", "Travelocity", "Trello Inc", "Tres Locos Restaurant (Vendor)", "Tropical Smoothie Cafe", "Tru by Hilton", "True Value", "Tuesday, October 20, 2026 04:06 PM GMT-05:00", "Tuffy Tire & Auto Service Center", "Turtle & Hughes Inc.", "Twin Flowers & Home Decor", "Twitter", "U.S. Cellular", "U.S. Upfitters of Wisconsin, Inc", "UL Solutions", "ULine", "UPP Parking Miami", "UPS (United Parcel Service)", "US Bank", "US Upfitters of Wisconsin", "USA CSC Servicework", "USCCA", "Uber", "Ubiquiti Store USA (UI.Com)", "Uhaul", "Ultimate Truck & Car Accessories", "Ultra Bright Lightz LLC", "Underwood Truck Stop", "Union Grove Lumber", "Union Station", "United Airlines", "United Rentals", "United States Postal Service USPS", "United States Treasury", "United States Treasury - Tax", "Unlimited Signs and Wraps", "Uplift Equipment Rental", "Urban Sense", "VRBO", "VSI Parks Broward County", "Valentine Coffee Roasters", "Valley Expo & Display", "VanTech USA Inc", "Venetian Resort Las Vegas", "Verizon", "ViVid Solutions WI, LLC", "Vicon", "Viking Electric Supply", "Viktos LLC", "Village of Greendale - Utility/Taxes", "Village of Greendale-Membership", "Village of Sturtevant", "Villard Food Mart", "Vimeo.com", "Visionworks", "Vistaprint", "Vosker Corporation", "Vudu.com", "WE Energies Wisconsin Electric", "WH International Response Center", "WHIRC", "WI Chiefs of Police Association", "WI Department of Revenue", "WI Dept of Revenue - Tax", "WI Dept of Transportation (DMV)", "WI Dept of Workforce Development (UI)", "WIORCA WI Organized Retail Crime Association", "WIlliam Suchla", "WJOA", "WaWa Gas", "Wal-Mart", "Walgreens", "Walk-On's Bistreaux & Bar", "Walker Industrial", "Walmart", "Warren Klaus Attorney", "Warrior Wash", "Watson Fuel Express", "Waukesha State Bank", "We The People Holsters", "WeatherTech", "Wefunder", "Wendy's", "Werner Electric Supply", "Western Digital", "Westfield Bank, FSB", "Whataburger", "Whole Foods Market", "Wienerschnitzel", "Wilbar Inc", "Willie's", "Wilson Amplifiers", "Wilson Farm Meats", "Wilson Premier Youth Baseball", "Winn Dixie", "Wisconsin Assoc of Homicide Investigators", "Wisconsin Dept of Justice", "Wisconsin Firearms Training Center", "Wisconsin Juvenile Officers Association", "Wisconsin Organized Retail Crime Association", "Wisconsin Restaurant Association", "Wisconsin State Fair Park", "Wisconsin Vision", "Wolf & Sons Electric (Nelco Electric Inc)", "Wolf Electric LLC", "Woodmans Grocery Store", "Workout Boss", "WurkHub Digital Marketing", "Wyndham Hotels & Resorts", "XENARC TECHNOLOGIES CORP", "Xenarc", "Yardarm Technologies, Inc.", "Yesway", "YourSix", "Youtube", "Zach Habeth", "Zaxby's", "ZipCash", "Zoho Corp (Bigin)", "Zuern Building Products", "Zupas", "eventbrite", "malwarebytes.com", "onmiQ Inc."];
+// Populate datalist
+const vendorList = document.getElementById('vendorList');
+VENDORS.forEach(v => {
+  const opt = document.createElement('option');
+  opt.value = v;
+  vendorList.appendChild(opt);
+});
+
+const CATEGORIES = ["Auto and Truck Expenses:Gas Expense", "Job Equipment Rental", "Job Materials Purchased", "Other Job Related Costs", "Tools and Equipment Expense", "Meals and Entertainment", "Advertising and Promotion"];
+// Populate category datalist
+const categoryList = document.getElementById('categoryList');
+CATEGORIES.forEach(c => {
+  const opt = document.createElement('option');
+  opt.value = c;
+  categoryList.appendChild(opt);
+});
+
+// Set today's date by default
+document.getElementById('date').valueAsDate = new Date();
+
+const photoInput = document.getElementById('photo');
+const preview = document.getElementById('preview');
+
+photoInput.addEventListener('change', async function() {
+  const file = this.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+
+  // Run OCR
+  const status = document.getElementById('ocrStatus');
+  status.textContent = 'Reading receipt...';
+
+  try {
+    const { data: { text } } = await Tesseract.recognize(file, 'eng', {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          status.textContent = `Reading... ${Math.round(m.progress * 100)}%`;
+        }
+      }
+    });
+
+    status.textContent = 'Extracted. Please review and correct if needed.';
+
+    // Try to extract amount (look for TOTAL, amount patterns)
+    const amountMatch = text.match(/(?:total|amount|due)[:\s]*\$?\s*(\d+\.\d{2})/i) ||
+                        text.match(/\$\s*(\d+\.\d{2})/);
+    if (amountMatch) {
+      document.getElementById('amount').value = parseFloat(amountMatch[1]).toFixed(2);
+    }
+
+    // Try to extract date
+    const dateMatch = text.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/) ||
+                      text.match(/(\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})/);
+    if (dateMatch) {
+      let d = dateMatch[1];
+      // Normalize to YYYY-MM-DD if possible
+      const parts = d.split(/[\/\-]/);
+      if (parts.length === 3) {
+        let [a, b, c] = parts;
+        if (a.length === 4) {
+          // already YYYY-MM-DD style
+          document.getElementById('date').value = `${a}-${b.padStart(2,'0')}-${c.padStart(2,'0')}`;
+        } else if (c.length === 4) {
+          // MM/DD/YYYY
+          document.getElementById('date').value = `${c}-${a.padStart(2,'0')}-${b.padStart(2,'0')}`;
+        } else if (c.length === 2) {
+          const year = parseInt(c) > 50 ? '19' + c : '20' + c;
+          document.getElementById('date').value = `${year}-${a.padStart(2,'0')}-${b.padStart(2,'0')}`;
+        }
+      }
+    }
+
+    // Vendor: take first non-empty line that looks like a name (not a date/number)
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+    for (const line of lines.slice(0, 5)) {
+      if (!/\d{1,2}[\/\-]\d{1,2}/.test(line) && !/^\$?\d/.test(line) && line.length < 40) {
+        document.getElementById('vendor').value = line;
+        break;
+      }
+    }
+
+  } catch (err) {
+    status.textContent = 'Could not read receipt. Please fill fields manually.';
+    console.error(err);
+  }
+});
+
+document.getElementById('expenseForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  const amount = document.getElementById('amount').value;
+  const date = document.getElementById('date').value;
+  const vendor = document.getElementById('vendor').value.trim();
+  const category = document.getElementById('category').value;
+  const description = document.getElementById('description').value.trim();
+  const job = document.getElementById('job').value.trim();
+  const payment = document.getElementById('payment').value;
+
+  if (!amount || !date || !vendor || !category || !description) {
+    alert('Please fill in all required fields.');
+    return;
+  }
+
+  // Build body with key fields clearly labeled for QuickBooks
+  let body = `AMOUNT: $${parseFloat(amount).toFixed(2)}\n`;
+  body += `PAYEE: ${vendor}\n`;
+  body += `DESCRIPTION: ${description}\n`;
+  body += `PAYMENT DATE: ${date}\n`;
+  body += `Category: ${category}\n`;
+  if (job) body += `Job/Customer: ${job}\n`;
+  if (payment) body += `Payment Account: ${payment}\n`;
+  body += `\n(Attach receipt photo before sending)`;
+
+  const subject = `Receipt - ${vendor} - $${parseFloat(amount).toFixed(2)} - ${category}`;
+  const mailto = `mailto:advatech_systems+expenses@assist.intuit.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  window.location.href = mailto;
+
+  // Show success after a short delay
+  setTimeout(() => {
+    document.getElementById('expenseForm').style.display = 'none';
+    document.getElementById('success').style.display = 'block';
+  }, 800);
+});
+</script>
+</body>
+</html>
